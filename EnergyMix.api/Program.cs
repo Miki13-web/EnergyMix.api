@@ -3,7 +3,6 @@ using EnergyMix.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Konfiguracja CORS dla aplikacji React (Vite na porcie 5173)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -22,9 +21,7 @@ builder.Services.AddScoped<IEnergyService, EnergyService>();
 builder.Services.AddHttpClient<ICarbonIntensityClient, CarbonIntensityClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.carbonintensity.org.uk/");
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
-
 
 var app = builder.Build();
 
@@ -35,11 +32,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseCors("AllowReactApp");
-
-app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

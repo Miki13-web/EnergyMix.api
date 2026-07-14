@@ -8,59 +8,45 @@ namespace EnergyMix.Api.Tests;
 
 public class EnergyControllerTests
 {
-    private readonly IEnergyService _mockEnergyService;
-    private readonly EnergyController _sut;
+    private readonly IEnergyService _energyService = Substitute.For<IEnergyService>();
+    private readonly EnergyController _controller;
 
     public EnergyControllerTests()
     {
-        _mockEnergyService = Substitute.For<IEnergyService>();
-        _sut = new EnergyController(_mockEnergyService);
+        _controller = new EnergyController(_energyService);
     }
 
     [Fact]
-    public async Task GetOptimalWindow_ShouldReturnBadRequest_WhenHoursOutOfRange()
+    public async Task GetOptimalWindow_zwraca_400_gdy_hours_poza_zakresem()
     {
-        // Act
-        // Wywołujemy z wartością 7, podczas gdy dopuszczalny zakres to 1-6
-        var result = await _sut.GetOptimalWindow(7, CancellationToken.None);
+        var result = await _controller.GetOptimalWindow(7, CancellationToken.None);
 
-        // Assert
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal(400, badRequestResult.StatusCode);
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
     }
 
     [Fact]
-    public async Task GetOptimalWindow_ShouldReturnOkWithData_WhenValidRequest()
+    public async Task GetOptimalWindow_zwraca_okno_gdy_dane_sa_dostepne()
     {
-        // Arrange
-        var expectedDto = new OptimalWindowDto(DateTime.UtcNow, DateTime.UtcNow.AddHours(3), 80m);
-        _mockEnergyService.GetOptimalChargingWindowAsync(3, Arg.Any<CancellationToken>())
-            .Returns(expectedDto);
+        var expected = new OptimalWindowDto(DateTime.UtcNow, DateTime.UtcNow.AddHours(3), 80m);
+        _energyService.GetOptimalChargingWindowAsync(3, Arg.Any<CancellationToken>())
+            .Returns(expected);
 
-        // Act
-        var result = await _sut.GetOptimalWindow(3, CancellationToken.None);
+        var result = await _controller.GetOptimalWindow(3, CancellationToken.None);
 
-        // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnValue = Assert.IsType<OptimalWindowDto>(okResult.Value);
-
-        Assert.Equal(200, okResult.StatusCode);
-        Assert.Equal(80m, returnValue.CleanEnergyPercentage);
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var window = Assert.IsType<OptimalWindowDto>(ok.Value);
+        Assert.Equal(80m, window.CleanEnergyPercentage);
     }
 
     [Fact]
-    public async Task GetOptimalWindow_ShouldReturnNotFound_WhenServiceReturnsNull()
+    public async Task GetOptimalWindow_zwraca_404_gdy_brak_danych()
     {
-        // Arrange
-        // Symulacja sytuacji, w której zewnętrzne API nie zwróciło wystarczającej liczby danych
-        _mockEnergyService.GetOptimalChargingWindowAsync(3, Arg.Any<CancellationToken>())
+        _energyService.GetOptimalChargingWindowAsync(3, Arg.Any<CancellationToken>())
             .Returns((OptimalWindowDto?)null);
 
-        // Act
-        var result = await _sut.GetOptimalWindow(3, CancellationToken.None);
+        var result = await _controller.GetOptimalWindow(3, CancellationToken.None);
 
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal(404, notFoundResult.StatusCode);
+        Assert.IsType<NotFoundObjectResult>(result);
     }
 }
