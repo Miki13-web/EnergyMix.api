@@ -7,6 +7,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
+        // Allow requests from the React app running on localhost:5173 and the deployed frontend on Render
         policy.WithOrigins("http://localhost:5173", "https://energy-mix-frontend-5379.onrender.com")
               .AllowAnyHeader()
               .AllowAnyMethod();
